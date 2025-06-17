@@ -13,7 +13,7 @@ export default function DashboardFilters() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all-projects">All Projects</SelectItem>
-              <SelectItem value="alpha">Project Alpha</SelectItem>
+              <SelectItem value="wellez">WellEz</SelectItem>
               <SelectItem value="beta">Project Beta</SelectItem>
             </SelectContent>
           </Select>

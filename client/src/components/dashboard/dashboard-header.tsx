@@ -16,7 +16,7 @@ export default function DashboardHeader() {
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-right">
-              <p className="text-sm font-medium">Sarah Johnson</p>
+              <p className="text-sm font-medium">Sebastian Martinez</p>
               <p className="text-blue-200 text-xs">Business Analyst</p>
             </div>
             <div className="w-8 h-8 bg-quorum-blue rounded-full flex items-center justify-center">
