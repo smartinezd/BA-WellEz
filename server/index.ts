@@ -1,12 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
-import http from "http";
+import { registerRoutes } from "./routes.js";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// API request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -25,57 +33,38 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
+      console.log(logLine);
     }
   });
 
   next();
 });
 
-(async () => {
-  await registerRoutes(app); 
+// Register API routes
+const init = async () => {
+  await registerRoutes(app);
 
+  // Serve static files from the React app
+  app.use(express.static(path.join(__dirname, "../public")));
+
+  // Error handling middleware
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
     res.status(status).json({ message });
-    throw err;
+    console.error(err);
   });
 
-  const startServer = async (initialPort: number) => {
-    const server = http.createServer(app);
-    
-    if (app.get("env") === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
+  // The "catchall" handler: for any request that doesn't
+  // match one above, send back React's index.html file.
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(__dirname, "../public/index.html"));
+  });
 
-    const tryPort = async (port: number): Promise<number> => {
-      try {
-        await new Promise((resolve, reject) => {
-          server.listen(port, "127.0.0.1")
-            .once('listening', resolve)
-            .once('error', reject);
-        });
-        return port;
-      } catch (err: any) {
-        if (err.code === 'EADDRINUSE') {
-          log(`Port ${port} is in use, trying ${port + 1}...`);
-          return tryPort(port + 1);
-        }
-        throw err;
-      }
-    };
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+};
 
-    const port = await tryPort(initialPort);
-    log(`Server is running on port ${port}`);
-  };
-
-  await startServer(5000);
-})();
+init().catch(console.error);
